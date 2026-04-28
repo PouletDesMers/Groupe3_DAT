@@ -85,7 +85,18 @@ Les tests d'intégration ont été réalisés via Jest.
 
 *Auteur :* [Nom de l'étudiant]
 
-La documentation API est accessible via Swagger : [Lien vers Swagger]
+[discrete]
+La documentation API est accessible via Swagger : link:http://localhost:3000/backend/#api-docs[Swagger]
+
+=== Liens utiles
+
+- Site public: link:http://localhost:3000[http://localhost:3000]
+- Panel admin: link:http://localhost:3000/backend/[http://localhost:3000/backend/]
+- API: link:http://localhost:8080[http://localhost:8080]
+- Swagger (API Docs): link:http://localhost:3000/backend/#api-docs[Swagger]
+- Dépôt GitHub: link:https://github.com/PouletDesMers/Projet-Fil-Rouge-Dev.git[GitHub - Projet-Fil-Rouge-Dev]
+- Resend (email): link:https://resend.com[resend.com]
+- Stripe Dashboard: link:https://dashboard.stripe.com[dashboard.stripe.com]
 
 [discrete]
 == Annexes
