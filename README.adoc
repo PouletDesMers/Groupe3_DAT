@@ -368,7 +368,7 @@ URL : http://localhost:3000/backend/
 | **Logs API** | Surveillance en temps réel
 | **Sauvegardes** | Backup et planification
 | **API Docs** | Documentation Swagger interactive
-|==|
+|===
 
 == Étape 7 : Application Mobile
 
