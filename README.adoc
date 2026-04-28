@@ -66,7 +66,7 @@ Projet-Fil-Rouge-Dev/
 ├── api/                    # API Go (backend)
 │   ├── handlers/           # Points d'entrée HTTP
 │   ├── logger/             # Système de logs
-│   ├── middleware/          # Sécurité, rate limiting
+│   ├── middleware/         # Sécurité, rate limiting
 │   ├── models/             # Modèles de données
 │   ├── repositories/       # Accès base de données
 │   ├── services/           # Logique métier
@@ -80,7 +80,7 @@ Projet-Fil-Rouge-Dev/
 │   │   ├── login.html      # Page de connexion
 │   │   └── js/modules/     # Modules JavaScript
 │   ├── frontend/           # Site public
-│   ├── middleware/          # Rate limiting Node.js
+│   ├── middleware/         # Rate limiting Node.js
 │   └── server.js           # Serveur Express
 ├── db/                     # Scripts SQL
 │   ├── 01_schema.sql       # Schéma de base
@@ -195,7 +195,7 @@ docker compose ps
 docker compose logs -f
 
 # Vérification santé API
-curl http://localhost:8080/health
+curl http://localhost:3000/health
 
 # Vérification site web
 curl -I http://localhost:3000
@@ -225,7 +225,7 @@ web-1                   Up              :3000->3000/tcp
 | **Swagger** | http://localhost:3000/backend/#api-docs
 |===
 
-Pour le panel admin, les identifiants par défaut sont ceux créés par le script `02_seed.sql`.
+Pour le panel admin, les identifiants par défaut sont ceux créés par le script `02_seed.sql` (par defaut `admin@cyna.fr` / `Admin1234!`). 
 
 == Étape 4 : Sauvegardes
 
