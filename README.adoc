@@ -1,0 +1,577 @@
+= Guide d'Installation — CYNA Plateforme SaaS Cybersécurité
+:author: Projet Fil Rouge — INGETIS Paris
+:revdate: 2026-04-27
+:toc: left
+:toc-title: Table des matières
+:icons: font
+:source-highlighter: highlight.js
+:numbered:
+:toclevels: 4
+
+== Introduction
+
+CYNA est une plateforme SaaS de cybersécurité complète, composée de trois services Dockerisés :
+
+* **API Go** — Backend REST (port 8080)
+* **Node.js** — Serveur web + proxy + interface admin (port 3000)
+* **PostgreSQL** — Base de données (port 5432)
+
+Ce guide vous accompagne pas à pas dans l'installation et la configuration complète de la plateforme.
+
+=== Prérequis matériels
+
+[cols="1,1", options="header"]
+|===
+| Composant | Minimum Recommandé
+| **RAM** | 4 Go (8 Go recommandé)
+| **CPU** | 2 cœurs (4 cœurs recommandé)
+| **Espace disque** | 10 Go (20 Go avec backups)
+| **OS** | Linux (Ubuntu 22.04+, Debian 12+, ou WSL2 sur Windows)
+|===
+
+=== Logiciels requis
+
+[source,bash]
+----
+# Installation des dépendances
+sudo apt update && sudo apt install -y \
+    docker.io \
+    docker-compose-v2 \
+    git \
+    curl
+
+# Vérification
+docker --version          # Docker 24+
+docker compose version    # Docker Compose v2
+git --version
+----
+
+== Étape 1 : Récupération du projet
+
+=== Cloner le dépôt
+
+[source,bash]
+----
+cd /opt
+sudo git clone https://github.com/PouletDesMers/Projet-Fil-Rouge-Dev.git
+sudo chown -R $USER:$USER Projet-Fil-Rouge-Dev
+cd Projet-Fil-Rouge-Dev
+----
+
+=== Structure des fichiers
+
+[source,text]
+----
+Projet-Fil-Rouge-Dev/
+├── api/                    # API Go (backend)
+│   ├── handlers/           # Points d'entrée HTTP
+│   ├── logger/             # Système de logs
+│   ├── middleware/          # Sécurité, rate limiting
+│   ├── models/             # Modèles de données
+│   ├── repositories/       # Accès base de données
+│   ├── services/           # Logique métier
+│   ├── routes/             # Définition des routes API
+│   ├── cache/              # Cache in-memory
+│   ├── config/             # Configuration
+│   └── rbac/               # Gestion des rôles
+├── web/                    # Serveur web Node.js
+│   ├── backend/            # Interface d'administration
+│   │   ├── index.html      # Panel admin complet
+│   │   ├── login.html      # Page de connexion
+│   │   └── js/modules/     # Modules JavaScript
+│   ├── frontend/           # Site public
+│   ├── middleware/          # Rate limiting Node.js
+│   └── server.js           # Serveur Express
+├── db/                     # Scripts SQL
+│   ├── 01_schema.sql       # Schéma de base
+│   └── 02_seed.sql         # Données de démonstration
+├── docker-compose.yml      # Orchestration
+└── .env.example            # Configuration
+----
+
+== Étape 2 : Configuration
+
+=== Créer le fichier `.env`
+
+[source,bash]
+----
+cp .env.example .env
+nano .env
+----
+
+=== Variables essentielles
+
+[source,env]
+----
+# ── Base de données (ne pas modifier si utilisation Docker) ──
+DB_HOST=db
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=password
+DB_NAME=mydb
+
+# ── Stripe (paiement en ligne — optionnel mais recommandé) ──
+STRIPE_SECRET_KEY=sk_test_votre_cle_privee
+STRIPE_PUBLISHABLE_KEY=pk_test_votre_cle_publique
+
+# ── API Security ──
+API_SECRET=une_chaine_aleatoire_tres_longue_32_caracteres_min
+
+# ── Email (Resend) ──
+RESEND_API_KEY=re_votre_cle_api_resend
+
+# ── Sauvegardes automatiques (optionnel) ──
+BACKUP_INTERVAL_MINUTES=1440  # Toutes les 24h
+----
+
+TIP: Pour générer une clé API_SECRET aléatoire : `openssl rand -hex 32`
+
+=== Configuration des emails (Resend)
+
+[source,bash]
+----
+# 1. Créer un compte sur https://resend.com
+# 2. Aller dans API Keys → créer une nouvelle clé
+# 3. Copier la clé dans .env : RESEND_API_KEY=re_...
+
+# 4. Vérifier le domaine d'envoi dans Resend DNS Records
+# 5. Ajouter les enregistrements MX/SPF/DKIM chez votre registrar
+
+# Test d'envoi d'email
+curl -X POST http://localhost:3000/api/test/send-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"welcome", "email":"test@example.com", "firstName":"Test"}'
+----
+
+=== Configuration Stripe
+
+[source,bash]
+----
+# 1. Créer un compte Stripe (https://dashboard.stripe.com)
+# 2. Activer le mode test dans le dashboard
+# 3. Récupérer les clés API :
+#    - Publiable : pk_test_xxxxxxxxxx
+#    - Secrète   : sk_test_xxxxxxxxxx
+# 4. Les mettre dans .env
+# 5. Optionnel : configurer un webhook
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+----
+
+== Étape 3 : Lancement
+
+=== Démarrer les services
+
+[source,bash]
+----
+docker compose up --build -d
+----
+
+Cette commande :
+. Construit les images Docker (Go, Node.js, PostgreSQL)
+. Initialise la base de données avec les schémas SQL
+. Démarre les 3 conteneurs
+
+=== Vérifier le bon fonctionnement
+
+[source,bash]
+----
+# État des conteneurs
+docker compose ps
+
+# Logs en direct
+docker compose logs -f
+
+# Vérification santé API
+curl http://localhost:8080/health
+
+# Vérification site web
+curl -I http://localhost:3000
+
+# Vérification base de données
+docker compose exec db pg_isready -U postgres
+----
+
+Résultat attendu :
+
+[source,text]
+----
+NAME                    STATUS          PORTS
+api-1                   Up              :8080->8080/tcp
+db-1                    Up (healthy)    :5432->5432/tcp
+web-1                   Up              :3000->3000/tcp
+----
+
+=== Première connexion
+
+[cols="1,2", options="header"]
+|===
+| Service | URL
+| **Site public** | http://localhost:3000
+| **Panel admin** | http://localhost:3000/backend/
+| **API** | http://localhost:8080
+| **Swagger** | http://localhost:3000/backend/#api-docs
+|===
+
+Pour le panel admin, les identifiants par défaut sont ceux créés par le script `02_seed.sql`.
+
+== Étape 4 : Sauvegardes
+
+=== Principe
+
+Les sauvegardes utilisent `pg_dump` pour créer des fichiers `.sql` dans le volume Docker `backups_data`. Aucune configuration supplémentaire n'est nécessaire.
+
+=== Types de sauvegarde
+
+[cols="1,2,2", options="header"]
+|===
+| Type | Contenu | Usage
+| `full` | Toutes les tables | Sauvegarde complète
+| `data` | Toutes les tables sauf `api_logs` | Données métier
+| `logs` | Uniquement `api_logs` | Audit et conformité
+|===
+
+=== Sauvegarde manuelle
+
+. Ouvrir le panel admin : http://localhost:3000/backend/
+. Aller dans **Sauvegardes**
+. Cliquer sur **"Lancer la sauvegarde"**
+. Le fichier `.sql` apparaît dans la liste
+
+=== Sauvegarde automatique (planification)
+
+==== Via l'interface
+
+. Dans la section **Planification automatique**
+. Choisir le type (Complète / Données / Logs)
+. Définir l'intervalle (ex: `60` + `min` pour toutes les heures)
+. Cliquer **"Ajouter"**
+
+==== Via variable d'environnement
+
+[source,env]
+----
+# Dans le fichier .env
+BACKUP_INTERVAL_MINUTES=1440  # Toutes les 24h
+----
+
+Puis redémarrer :
+
+[source,bash]
+----
+docker compose down && docker compose up -d
+----
+
+=== Restauration
+
+. Dans la liste des sauvegardes, cliquer sur l'icône **restaurer** ↻
+. Confirmer la restauration
+. Le fichier SQL est injecté dans PostgreSQL via `psql`
+
+[TIP]
+====
+La restauration écrase les données existantes. Faites une sauvegarde avant de restaurer.
+====
+
+=== Commandes manuelles (avancé)
+
+[source,bash]
+----
+# Lister les fichiers de sauvegarde
+docker compose exec api ls -lh /backups/pgdump/
+
+# Restaurer manuellement
+docker compose exec -T db psql -U postgres -d mydb < backup.sql
+
+# Créer une sauvegarde manuelle via pg_dump
+docker compose exec db pg_dump -U postgres -d mydb \
+  --data-only --inserts --no-owner --no-acl \
+  -f /tmp/backup_manuelle.sql
+
+# Télécharger une sauvegarde
+docker compose cp api:/backups/pgdump/full_20260427_123456.sql .
+----
+
+== Étape 5 : Logs
+
+=== Triple stockage
+
+Les logs API sont écrits simultanément dans 3 supports :
+
+[cols="1,2,2", options="header"]
+|===
+| Stockage | Durée | Commande d'accès
+| **RAM** (500 entrées) | Perdu au redémarrage | Interface admin
+| **PostgreSQL** | 90 jours (purge auto) | Interface admin ou SQL
+| **Fichier** (JSONL) | Illimitée | `docker compose exec api tail -f /var/log/api/api.log`
+|==|
+
+=== Consultation des logs fichier
+
+[source,bash]
+----
+# En temps réel
+docker compose logs -f api
+
+# Dernières 50 lignes du fichier
+docker compose exec api tail -50 /var/log/api/api.log
+
+# Filtrer les erreurs
+docker compose exec api grep ERROR /var/log/api/api.log
+
+# Compter le nombre de logs
+docker compose exec api wc -l /var/log/api/api.log
+----
+
+=== Purge des logs
+
+[source,bash]
+----
+# Depuis l'interface : Sauvegardes → Logs API → "Vider"
+# Ou en SQL directement :
+docker compose exec db psql -U postgres -d mydb \
+  -c "DELETE FROM api_logs;"
+----
+
+== Étape 6 : Administration
+
+=== Accès au panel admin
+
+URL : http://localhost:3000/backend/
+
+=== Sections disponibles
+
+[cols="1,3", options="header"]
+|===
+| Section | Description
+| **Dashboard** | Vue d'ensemble, statistiques, graphiques
+| **Utilisateurs** | Gestion des comptes, rôles, statuts
+| **Catégories** | Organisation des produits/services
+| **Images Carrousel** | Gestion des images de la page d'accueil
+| **Commandes** | Suivi et gestion des commandes
+| **Devis** | Demande et envoi de devis (via Stripe Quotes)
+| **Remises** | Codes promo (locaux + Stripe)
+| **Newsletter** | Campagnes emails et abonnés
+| **Rôles & Permissions** | Contrôle d'accès RBAC
+| **Logs API** | Surveillance en temps réel
+| **Sauvegardes** | Backup et planification
+| **API Docs** | Documentation Swagger interactive
+|==|
+
+== Dépannage
+
+=== Problème : les conteneurs ne démarrent pas
+
+[source,bash]
+----
+# Voir les logs détaillés
+docker compose logs
+
+# Vérifier les permissions
+sudo chown -R $USER:$USER /opt/Projet-Fil-Rouge-Dev
+
+# Redémarrer Docker
+sudo systemctl restart docker
+docker compose up -d
+----
+
+=== Problème : "port already allocated"
+
+[source,bash]
+----
+# Vérifier quel processus utilise le port
+sudo lsof -i :3000
+sudo lsof -i :8080
+sudo lsof -i :5432
+
+# Modifier les ports dans docker-compose.yml si nécessaire
+# Remplacer "3000:3000" par "3001:3000"
+----
+
+=== Problème : erreur 429 (Too Many Requests)
+
+Le rate limiting est atteint. Attendre 60 secondes que le quota se réinitialise.
+
+[source,bash]
+----
+# Réinitialiser le rate limiting en redémarrant l'API
+docker compose restart api
+----
+
+=== Problème : base de données corrompue
+
+[source,bash]
+----
+# Réinitialiser complètement (⚠️ perd toutes les données)
+docker compose down -v
+docker compose up -d
+----
+
+=== Problème : les emails ne partent pas
+
+[source,bash]
+----
+# Vérifier la clé Resend
+docker compose exec web env | grep RESEND
+
+# Tester l'envoi
+curl -X POST http://localhost:3000/api/test/send-email \
+  -H "Content-Type: application/json" \
+  -d '{"type":"welcome", "email":"test@example.com", "firstName":"Test"}'
+
+# Vérifier les logs Node.js
+docker compose logs web | grep -i email
+----
+
+== Commandes de référence
+
+=== Docker
+
+[source,bash]
+----
+# Démarrer
+docker compose up -d
+
+# Arrêter
+docker compose down
+
+# Redémarrer un service
+docker compose restart api
+
+# Voir les logs
+docker compose logs -f api
+
+# Reconstruire un service
+docker compose build api && docker compose up -d
+
+# Réinitialiser complètement (⚠️ perte données)
+docker compose down -v
+
+# Exécuter une commande dans un conteneur
+docker compose exec db psql -U postgres -d mydb
+----
+
+=== API
+
+[source,bash]
+----
+# Santé
+curl http://localhost:8080/health
+
+# Swagger
+curl http://localhost:8080/api/swagger.json | jq '.openapi'
+
+# Statistiques logs
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/logs/stats
+
+# Liste backups
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:3000/admin/api/backup/list
+----
+
+=== PostgreSQL
+
+[source,sql]
+----
+-- Connexion
+\c mydb
+
+-- Lister les tables
+\dt
+
+-- Voir les logs récents
+SELECT timestamp, level, method, path, status
+FROM api_logs
+ORDER BY timestamp DESC
+LIMIT 20;
+
+-- Statistiques logs par niveau
+SELECT level, COUNT(*)
+FROM api_logs
+GROUP BY level
+ORDER BY COUNT(*) DESC;
+
+-- Taille de la base
+SELECT pg_size_pretty(pg_database_size('mydb'));
+----
+
+== Annexes
+
+=== Annexe A : Architecture réseau
+
+[source,text]
+----
+ INTERNET
+    │
+    ▼
+┌──────────┐    :3000      ┌──────────┐    :8080      ┌──────────┐
+│ Client   │──────────────▶│  WEB     │──────────────▶│  API     │
+| Browser  |               |  Node.js │               │  Go      │
+└──────────┘               └──────────┘               └────┬─────┘
+                                                            │
+                                                            │:5432
+                                                            ▼
+                                                     ┌──────────┐
+                                                     │  DB      │
+                                                     │PostgreSQL│
+                                                     └──────────┘
+
+Volumes Docker :
+  postgres_data  → /var/lib/postgresql/data
+  uploads_data   → /app/uploads
+  backups_data   → /backups/pgdump/
+  api_logs       → /var/log/api/
+----
+
+=== Annexe B : Sécurité — Rate Limiting
+
+[cols="1,2,2", options="header"]
+|===
+| Couche | Limiteur | Limite
+| Node.js | `strictLimiter` | 120 req/min sur `/admin/api`
+| Node.js | `apiLimiter` | 100 req/min sur `/api`
+| Node.js | `loginLimiter` | 5 req/15min sur login
+| Go API | `RateLimitAPI` | 100 req/min (global)
+| Go API | `RateLimitAdmin` | 600 req/min (admin)
+| Frontend | Circuit breaker | Attente 60s après un 429
+|===
+
+=== Annexe C : Dépendances
+
+[cols="1,3", options="header"]
+|===
+| Technologie | Version
+| Go | 1.21+
+| Node.js | 20+
+| PostgreSQL | 16+
+| Docker | 24+
+| Docker Compose | v2
+| Alpine Linux | Latest (conteneurs)
+| Stripe SDK | Dernière version
+| Resend SDK | Dernière version
+|===
+
+=== Annexe D : Variables d'environnement complètes
+
+[cols="1,2,2", options="header"]
+|===
+| Variable | Description | Valeur par défaut
+| `DB_HOST` | Hôte PostgreSQL | `localhost`
+| `DB_PORT` | Port PostgreSQL | `5432`
+| `DB_USER` | Utilisateur DB | `postgres`
+| `DB_PASSWORD` | Mot de passe DB | `password`
+| `DB_NAME` | Nom de la base | `mydb`
+| `DB_SSLMODE` | SSL PostgreSQL | `disable`
+| `API_SECRET` | Secret tokens | `""`
+| `API_PORT` | Port API Go | `8080`
+| `PORT` | Port web | `3000`
+| `STRIPE_SECRET_KEY` | Clé secrète Stripe | `""`
+| `STRIPE_PUBLISHABLE_KEY` | Clé publique Stripe | `""`
+| `RESEND_API_KEY` | Clé API Resend | `""`
+| `LOG_FILE_PATH` | Chemin fichier logs | `/var/log/api/api.log`
+| `BACKUP_INTERVAL_MINUTES` | Intervalle backup auto | `""`
+| `RESTIC_PASSWORD` | Mot de passe Restic (obsolète) | `""`
+| `RESTIC_REPOSITORY` | Chemin repo Restic (obsolète) | `/backups/restic-repo`
+| `UPLOADS_DIR` | Dossier uploads | `/app/uploads`
+| `FRONTEND_URL` | URL du frontend | `http://localhost:3000`
+|===
