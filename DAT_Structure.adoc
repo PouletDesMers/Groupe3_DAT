@@ -8,13 +8,13 @@
 
 Ce document sert de modèle pour le projet CYNA. Il respecte les exigences du bloc BC3.
 
-== 1. Introduction et Périmètre
+== Introduction et Périmètre
 
 *Auteur :* [Nom de l'étudiant]
 
 Ce projet vise à répondre aux problématiques de scalabilité identifiées dans le Rendu 1...
 
-== 2. BC3.1 : Installation et Configuration
+== BC3.1 : Installation et Configuration
 
 *Auteur :* [Nom de l'étudiant]
 
@@ -57,19 +57,19 @@ projet-fil-rouge-dev-web-1   projet-fil-rouge-dev-web   "docker-entrypoint.s…"
 /var/run/postgresql:5432 - accepting connections
 ----
 
-== 3. BC3.2 : Gouvernance des SI
+== BC3.2 : Gouvernance des SI
 
 *Auteur :* [Nom de l'étudiant]
 
 La supervision est assurée par Prometheus et Grafana.
 
-== 4. BC3.3 : Gestion de la Sécurité
+== BC3.3 : Gestion de la Sécurité
 
 *Auteur :* [Nom de l'étudiant]
 
 La politique de sécurité suit les principes du Zero Trust. Les secrets sont gérés via des variables d'environnement chiffrées.
 
-== 5. BC3.4 : Tests et Validation
+== BC3.4 : Tests et Validation
 
 *Auteur :* [Nom de l'étudiant]
 
@@ -81,12 +81,13 @@ Les tests d'intégration ont été réalisés via Jest.
 | Test Unitaire | Succès | Rapport PDF joint
 |===
 
-== 6. BC3.5 : Documentation Technique
+== BC3.5 : Documentation Technique
 
 *Auteur :* [Nom de l'étudiant]
 
 La documentation API est accessible via Swagger : [Lien vers Swagger]
 
+[discrete]
 == Annexes
 
 Les schémas d'architecture globale et de flux de données sont joints en annexe.
