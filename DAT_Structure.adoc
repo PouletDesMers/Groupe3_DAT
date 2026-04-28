@@ -85,7 +85,6 @@ Les tests d'intégration ont été réalisés via Jest.
 
 *Auteur :* [Nom de l'étudiant]
 
-[discrete]
 La documentation API est accessible via Swagger : link:http://localhost:3000/backend/#api-docs[Swagger]
 
 === Liens utiles
@@ -98,7 +97,7 @@ La documentation API est accessible via Swagger : link:http://localhost:3000/bac
 - Resend (email): link:https://resend.com[resend.com]
 - Stripe Dashboard: link:https://dashboard.stripe.com[dashboard.stripe.com]
 
-[discrete]
+[unnumbered]
 == Annexes
 
 Les schémas d'architecture globale et de flux de données sont joints en annexe.
