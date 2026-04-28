@@ -27,7 +27,6 @@ Ce guide vous accompagne pas à pas dans l'installation et la configuration comp
 | **RAM** | 4 Go (8 Go recommandé)
 | **CPU** | 2 cœurs (4 cœurs recommandé)
 | **Espace disque** | 10 Go (20 Go avec backups)
-| **OS** | Linux (Ubuntu 22.04+, Debian 12+, ou WSL2 sur Windows)
 |===
 
 === Logiciels requis
@@ -317,7 +316,7 @@ Les logs API sont écrits simultanément dans 3 supports :
 | **RAM** (500 entrées) | Perdu au redémarrage | Interface admin
 | **PostgreSQL** | 90 jours (purge auto) | Interface admin ou SQL
 | **Fichier** (JSONL) | Illimitée | `docker compose exec api tail -f /var/log/api/api.log`
-|==|
+|===
 
 === Consultation des logs fichier
 
